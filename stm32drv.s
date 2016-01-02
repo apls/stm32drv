@@ -93,6 +93,7 @@ __heap_limit
                 THUMB
 ;复位向量
     AREA RESET,CODE,READONLY
+                EXPORT  __Vectors
     ;DCD STACK_TOP ;MSP主堆栈指针
     ;DCD START      ;复位，PC初始值
 __Vectors       DCD     __initial_sp               ; Top of Stack
@@ -116,15 +117,18 @@ __Vectors_End
 
         AREA    |.text|, CODE, READONLY
         ENTRY         ;指示开始执行
-Reset_Handler		
+; Reset Handler
+Reset_Handler   PROC
+                EXPORT  Reset_Handler             [WEAK]
+
 	; Clear output
 	EOR R0,R0	   ;
 	LDR R1,=GPIOB
-	STR R0,[R1]		   
-	
+	STR R0,[R1]
+
 	;Init begin
 
-    ;BL.W   RCC_CONFIG_48MHZ
+    BL.W   RCC_CONFIG_48MHZ
 
     LDR    R1,=RCC_APB2ENR
     LDR    R0,[R1]        ;读
@@ -165,8 +169,7 @@ GOON
 	MOV R2,R5
 	EOR R2,R6	   ;
 	LDR R1,=GPIOB
-	STR R2,[R1]	 
-
+	STR R2,[R1]
 	; 自动半流判断
 	; R11 自动半流 计数
 	SUBS R11,R11,#1
@@ -175,6 +178,7 @@ GOON
 	MOV R0,#0X128
 	STR R0,[R1]
     B GOON
+AUTO_HALF_CURRENT_END
 
 	; 斩波判断
     LDR R1,=GPIOD
@@ -184,7 +188,6 @@ GOON
 	EOR R2,R6
 	LDR R1,=GPIOB
 	STR R2,[R1]
-
 	; 脉冲判断
 	; R8 上升延标志
 	; R9：输出数组位置  R10：输出数组地址
@@ -196,7 +199,7 @@ GOON
 	TST R0, #BIT9
 	BEQ PUL_DIR
 	ADDS R9,R9,#2
-PUL_DIR		   
+PUL_DIR
 
 	; 斩波判断
     LDR R1,=GPIOD
@@ -225,7 +228,7 @@ PUL_OUT
 	; R7 PWM 计数
 PWM_TEST
 	SUBS R7,R7,#1
-	BNE PWM_DONE  
+	BNE PWM_DONE
 
 	; 斩波判断
     LDR R1,=GPIOD   ; 取比较器状态
@@ -242,8 +245,9 @@ PWM_TEST
 	LDR R1,=GPIOB
 	STR R5,[R1]
 PWM_DONE
-	B GOON	
+	B GOON
 
+ENDP
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -346,8 +350,10 @@ SysTick_Handler PROC
                 EXPORT  SysTick_Handler            [WEAK]
                 B       .
                 ENDP
+
+
 ;中断
-Default_Handler PROC		 
+Default_Handler PROC
                 B       .
 
                 ENDP
